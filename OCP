@@ -1,0 +1,37 @@
+Perf_commands.sh
+-----------------
+
+#!/bin/bash
+echo "NOTE ==> In order to capture useful data, run this script only when there is a performance degradation issue."
+FOLDER="data__$(hostname)__$(date +%F-%H_%M_%S)"
+mkdir $FOLDER
+cd $FOLDER
+ps aux > ps_aux.txt &
+ps auxH -L > ps_auxH.txt &
+ps -eo pid,ppid,user,stat,pcpu,comm,wchan:32 > ps_eo.txt &
+top -n 50 -b > top.txt &
+vmstat -t 3 50 > vmstat.txt &
+mpstat -P ALL 3 50 > mpstat.txt &
+iostat -dcNtx 2 100 > iostat.txt &
+#iotop -bt -n 100 > iotop.txt &
+pidstat -t -u -l -p ALL 1 60 > pidstat.txt &
+sar -A 2 50 > sar.txt &
+#echo w > /proc/sysrq-trigger
+for x in {1..30}; do free -m || break;sleep 3; done > free.txt &
+for x in {1..20}; do cat /proc/meminfo >> meminfo.txt || break;sleep 3; done
+ps -eo pid,tid,class,rtprio,ni,pri,psr,pcpu,stat,wchan:30,comm > ps_eo_flag.txt &
+
+cd ..
+tar -cjf $FOLDER.tar.bz2 $FOLDER
+rm -rf $FOLDER
+echo "Performance data has been captured successfully. Attach **$FOLDER** to the case."
+~~~~
+
+
+Please run this command and provide us output file to get the stacks of blocked tasks:
+
+# ps --no-header aux | awk '$8~/D/ {printf "\n%s\n", $0; system("cat /proc/" $2 "/stack")}' > /tmp/pidstack.out
+
+
+
+Kindly provide above details to start with investigation of performance issue.
